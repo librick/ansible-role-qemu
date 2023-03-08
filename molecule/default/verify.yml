@@ -1,0 +1,17 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+
+  tasks:
+  - name: Get groups to which qemu_user belongs.
+    ansible.builtin.command:
+      cmd: groups
+    become: true
+    become_user: "{{ qemu_user }}"
+    changed_when: false
+    register: r_groups
+
+  - name: Assert qemu_user belongs to kvm group.
+    ansible.builtin.assert:
+      that: "'kvm' in {{ r_groups.stdout.split() }}"

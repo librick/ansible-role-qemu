@@ -1,0 +1,2 @@
+# The username of the user for which QEMU settings will be customized
+qemu_user: "{{ ansible_user }}"

@@ -1,0 +1,58 @@
+---
+- name: Ensure qemu-related apt packages are installed.
+  ansible.builtin.apt:
+    name:
+      - qemu-kvm
+      - libvirt-clients
+      - libvirt-daemon-system
+      - bridge-utils
+      - virtinst
+      - libvirt-daemon
+      - virt-manager
+    state: present
+  become: true
+  become_user: root
+  notify:
+    - Restart libvirtd daemon.
+
+# The acl apt package includes the setfacl binary
+# which is required by Ansible to handle permissions when using
+# become_user with non-root users.
+# See: https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_privilege_escalation.html#risks-of-becoming-an-unprivileged-user.
+# See: https://packages.debian.org/sid/acl
+- name: Ensure acl apt package is installed.
+  ansible.builtin.apt:
+    name: acl
+    state: present
+  become: true
+  become_user: root
+
+- name: Ensure kvm group exists.
+  ansible.builtin.group:
+    name: "kvm"
+  become: true
+  become_user: root
+
+- name: Ensure qemu_user is in kvm group.
+  ansible.builtin.user:
+    name: "{{ qemu_user }}"
+    append: true
+    groups: "kvm"
+  become: true
+  become_user: root
+
+# python-lxml is a dependency of the community.libvirt.virt_net module module
+# See: https://docs.ansible.com/ansible/latest/collections/community/libvirt/virt_net_module.html
+- name: Ensure python3-lxml apt package is installed.
+  ansible.builtin.apt:
+    name: python3-lxml
+    state: present
+  become: true
+  become_user: root
+
+- name: Ensure default virtual network is set to autostart.
+  community.libvirt.virt_net:
+    autostart: true
+    name: "default"
+  become: true
+  become_user: root
